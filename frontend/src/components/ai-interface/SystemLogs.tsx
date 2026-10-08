@@ -1,81 +1,108 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-
-interface LogEntry {
-  id: number;
-  timestamp: string;
-  level: "info" | "warning" | "success" | "error";
-  message: string;
-}
+import { useEffect, useRef } from "react";
+import { useSystemLogs, LogLevel, LogCategory } from "@/contexts/SystemLogContext";
+import { Trash2 } from "lucide-react";
 
 const SystemLogs = () => {
-  const [logs, setLogs] = useState<LogEntry[]>([
-    { id: 1, timestamp: "00:00:01", level: "info", message: "System initialized" },
-    { id: 2, timestamp: "00:00:02", level: "success", message: "Neural network online" },
-    { id: 3, timestamp: "00:00:03", level: "info", message: "Voice module ready" },
-    { id: 4, timestamp: "00:00:04", level: "warning", message: "Awaiting API connection" },
-    { id: 5, timestamp: "00:00:05", level: "info", message: "Backend sync pending" },
-  ]);
+  const { logs, clearLogs } = useSystemLogs();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const getLevelStyles = (level: LogEntry["level"]) => {
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  const getLevelStyles = (level: LogLevel) => {
     switch (level) {
       case "info":
-        return "text-primary";
+        return "text-cyan-400";
       case "success":
-        return "text-green-400";
+        return "text-emerald-400";
       case "warning":
-        return "text-yellow-400";
+        return "text-amber-400";
       case "error":
-        return "text-accent";
+        return "text-rose-500";
       default:
         return "text-muted-foreground";
     }
   };
 
-  // Simulate new logs
-  useEffect(() => {
-    const messages = [
-      { level: "info" as const, message: "Processing audio stream" },
-      { level: "success" as const, message: "Voice pattern recognized" },
-      { level: "info" as const, message: "Generating response" },
-      { level: "warning" as const, message: "High latency detected" },
-      { level: "success" as const, message: "Response delivered" },
-    ];
-
-    const interval = setInterval(() => {
-      const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-      const now = new Date();
-      const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
-      
-      setLogs((prev) => [
-        ...prev.slice(-6),
-        {
-          id: Date.now(),
-          timestamp,
-          level: randomMsg.level,
-          message: randomMsg.message,
-        },
-      ]);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const getCategoryStyles = (category?: LogCategory) => {
+    switch (category) {
+      case "MIC":
+        return "bg-cyan-500/10 text-cyan-400 border-cyan-500/30";
+      case "GROQ":
+        return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+      case "TTS":
+        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+      case "SESSION":
+        return "bg-indigo-500/10 text-indigo-400 border-indigo-500/30";
+      case "NET":
+        return "bg-purple-500/10 text-purple-400 border-purple-500/30";
+      default:
+        return "bg-muted/30 text-muted-foreground border-border";
+    }
+  };
 
   return (
-    <div className="space-y-2 font-mono text-xs">
-      {logs.map((log, index) => (
-        <motion.div
-          key={log.id}
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.05 }}
-          className="flex gap-2 items-start"
+    <div className="flex flex-col h-full max-h-[300px]">
+      {/* Header controls */}
+      <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/40">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+          </span>
+          <span className="sci-fi-label text-[10px] text-muted-foreground">LIVE STREAM</span>
+        </div>
+        <button
+          onClick={clearLogs}
+          title="Clear system logs"
+          className="text-muted-foreground/60 hover:text-primary transition-colors p-1 rounded hover:bg-primary/10"
         >
-          <span className="text-muted-foreground/50">[{log.timestamp}]</span>
-          <span className={getLevelStyles(log.level)}>●</span>
-          <span className="text-foreground/80">{log.message}</span>
-        </motion.div>
-      ))}
+          <Trash2 size={12} />
+        </button>
+      </div>
+
+      {/* Logs container */}
+      <div ref={scrollContainerRef} className="space-y-2 font-mono text-xs overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-border">
+        {logs.length === 0 ? (
+          <div className="text-muted-foreground/50 italic py-4 text-center text-[11px]">
+            No activity logged yet...
+          </div>
+        ) : (
+          logs.map((log) => (
+            <motion.div
+              key={log.id}
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex gap-2 items-start leading-tight"
+            >
+              <span className="text-muted-foreground/50 text-[10px] whitespace-nowrap pt-0.5">
+                [{log.timestamp}]
+              </span>
+
+              {log.category && (
+                <span
+                  className={`text-[9px] px-1 py-0.5 rounded border whitespace-nowrap font-bold tracking-wider ${getCategoryStyles(
+                    log.category
+                  )}`}
+                >
+                  {log.category}
+                </span>
+              )}
+
+              <span className={`${getLevelStyles(log.level)} pt-0.5`}>●</span>
+
+              <span className="text-foreground/90 break-words flex-1 text-[11px]">
+                {log.message}
+              </span>
+            </motion.div>
+          ))
+        )}
+      </div>
     </div>
   );
 };

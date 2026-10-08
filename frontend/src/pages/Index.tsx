@@ -31,24 +31,40 @@ const Index = () => {
   }, [initializeSession]);
 
   // Handle voice input transcript
-  const handleVoiceTranscript = useCallback(async (text: string) => {
-    if (!text.trim()) return;
-    
-    // Stop any ongoing speech output
-    stopVoice();
-    
-    // Set to thinking while processing
-    setStatus("thinking");
-    
-    try {
-      await sendMessage(text);
-    } catch (error) {
-      console.error("Error sending message:", error);
+  const handleVoiceTranscript = useCallback(
+    async (text: string) => {
+      const cleanText = text.trim();
+      if (!cleanText) return;
+
+      // Stop any ongoing speech output
+      stopVoice();
+
+      // Set to thinking while processing
+      setStatus("thinking");
+
+      try {
+        await sendMessage(cleanText);
+      } catch (error) {
+        console.error("[L.N.X] Error sending voice message:", error);
+        setStatus("idle");
+      }
+    },
+    [sendMessage, stopVoice]
+  );
+
+  const { isListening, interimText, startListening, stopListening, submitAndStop } =
+    useSpeechInput(handleVoiceTranscript);
+
+  // Sync listening state with status without overwriting thinking/speaking
+  useEffect(() => {
+    if (isLoading) {
+      setStatus("thinking");
+    } else if (isListening && status !== "speaking" && status !== "thinking") {
+      setStatus("listening");
+    } else if (!isListening && status === "listening") {
       setStatus("idle");
     }
-  }, [sendMessage, stopVoice]);
-
-  const { isListening, startListening, stopListening } = useSpeechInput(handleVoiceTranscript);
+  }, [isListening, isLoading, status]);
 
   // Handle AI response with voice output (spoken exactly once per assistant message)
   useEffect(() => {
@@ -64,42 +80,53 @@ const Index = () => {
     ) {
       lastSpokenIndexRef.current = lastIndex;
 
-      // Prevent microphone from picking up the speaker sound
+      // Ensure microphone is stopped during AI speaking
       stopListening();
       setStatus("speaking");
 
       speak(lastMessage.content)
         .then(() => {
-          setStatus("idle");
+          // Seamlessly transition back to listening for continuous conversation
+          setStatus("listening");
+          setTimeout(() => {
+            startListening();
+          }, 300);
         })
         .catch(() => {
           setStatus("idle");
         });
     }
-  }, [messages, isLoading, speak, stopListening]);
+  }, [messages, isLoading, speak, stopListening, startListening]);
 
-  // Handle listening state changes
-  useEffect(() => {
+  // Toggle voice interaction by clicking the AI core
+  const toggleVoiceInteraction = useCallback(() => {
     if (isListening) {
-      setStatus("listening");
-    } else if (status === "listening") {
-      setStatus("idle");
-    }
-  }, [isListening, status]);
-
-  // Handle manual status change
-  const handleStatusChange = useCallback((newStatus: AIStatus) => {
-    if (newStatus === "listening") {
+      submitAndStop();
+    } else if (status === "speaking") {
       stopVoice();
       startListening();
-    } else if (newStatus === "idle") {
-      stopListening();
-      stopVoice();
-      setStatus("idle");
     } else {
-      setStatus(newStatus);
+      stopVoice();
+      startListening();
     }
-  }, [startListening, stopListening, stopVoice]);
+  }, [isListening, status, startListening, submitAndStop, stopVoice]);
+
+  // Handle manual status change
+  const handleStatusChange = useCallback(
+    (newStatus: AIStatus) => {
+      if (newStatus === "listening") {
+        stopVoice();
+        startListening();
+      } else if (newStatus === "idle") {
+        stopListening();
+        stopVoice();
+        setStatus("idle");
+      } else {
+        setStatus(newStatus);
+      }
+    },
+    [startListening, stopListening, stopVoice]
+  );
 
   return <div className="relative min-h-screen bg-background overflow-hidden">
       {/* Background effects */}
@@ -119,7 +146,7 @@ const Index = () => {
           <div className="w-2 h-8 bg-primary rounded-full" />
           <div>
             <h1 className="font-display text-xl tracking-[0.3em] text-primary text-glow">L.N.X</h1>
-            <p className="sci-fi-label text-[10px] text-muted-foreground">ADVANCED  AGENT</p>
+            <p className="sci-fi-label text-[10px] text-muted-foreground">ADVANCED  AGENT</p>
           </div>
         </div>
 
@@ -177,8 +204,8 @@ const Index = () => {
 
         {/* Center - AI Core */}
         <div className="flex flex-col items-center gap-8">
-          <AICore status={status} />
-          <StatusIndicator status={status} onStatusChange={handleStatusChange} />
+          <AICore status={status} onClick={toggleVoiceInteraction} />
+          <StatusIndicator status={status} interimText={interimText} onStatusChange={handleStatusChange} />
         </div>
 
         {/* Connector lines - right */}

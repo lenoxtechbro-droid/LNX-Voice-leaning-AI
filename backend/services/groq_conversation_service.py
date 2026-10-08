@@ -30,7 +30,7 @@ def build_system_prompt(user_id: str) -> str:
             pass
 
     return (
-        "You are L.N.X, a friendly, highly engaging, and intelligent AI mentor speaking directly to the user in a voice conversation.\n\n"
+        "You are LNX, a friendly, highly engaging, and intelligent AI mentor speaking directly to the user in a voice conversation.\n\n"
         "Core Speaking Guidelines:\n"
         "1. Speak naturally like a real human mentor in spoken conversational English. Use contractions naturally (e.g., 'I'm', 'let's', 'you'll', 'don't', 'that's', 'we're').\n"
         "2. Keep your sentences smooth, engaging, and easy to listen to. Use natural conversational phrasing and transitions (e.g., 'Oh, interesting!', 'Well,', 'You see,', 'Here is the cool part:').\n"
@@ -43,11 +43,10 @@ def build_system_prompt(user_id: str) -> str:
 
 
 CANDIDATE_MODELS = [
-    "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
     "qwen/qwen3.8-27b",
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
+    "allam-2-7b",
 ]
 
 

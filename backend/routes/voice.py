@@ -23,11 +23,10 @@ async def tts(
     user_id: str = Depends(get_current_user_id),
 ):
     audio_bytes = text_to_speech(payload.text, payload.voice_id)
-    if not audio_bytes:
-        return StreamingResponse(
-            iter([b""]),
-            media_type="audio/mpeg",
-            headers={"Content-Disposition": 'inline; filename="voice.mp3"'},
+    if not audio_bytes or len(audio_bytes) < 100:
+        raise HTTPException(
+            status_code=503,
+            detail="TTS service unavailable or quota exceeded",
         )
     return StreamingResponse(
         iter([audio_bytes]),

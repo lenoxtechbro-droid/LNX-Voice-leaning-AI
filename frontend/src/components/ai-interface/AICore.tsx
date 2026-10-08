@@ -3,9 +3,10 @@ import { useRef } from "react";
 
 interface AICoreProps {
   status: "idle" | "listening" | "thinking" | "speaking";
+  onClick?: () => void;
 }
 
-const AICore = ({ status }: AICoreProps) => {
+const AICore = ({ status, onClick }: AICoreProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Mouse position tracking
@@ -61,7 +62,8 @@ const AICore = ({ status }: AICoreProps) => {
   return (
     <motion.div 
       ref={containerRef}
-      className="relative flex items-center justify-center cursor-grab active:cursor-grabbing"
+      className="relative flex items-center justify-center cursor-pointer select-none"
+      onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{

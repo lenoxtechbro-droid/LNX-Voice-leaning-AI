@@ -2,10 +2,11 @@ import { motion } from "framer-motion";
 
 interface StatusIndicatorProps {
   status: "idle" | "listening" | "thinking" | "speaking";
+  interimText?: string;
   onStatusChange: (status: "idle" | "listening" | "thinking" | "speaking") => void;
 }
 
-const StatusIndicator = ({ status, onStatusChange }: StatusIndicatorProps) => {
+const StatusIndicator = ({ status, interimText, onStatusChange }: StatusIndicatorProps) => {
   const statusConfig = {
     idle: {
       label: "STANDBY",
@@ -15,17 +16,17 @@ const StatusIndicator = ({ status, onStatusChange }: StatusIndicatorProps) => {
     listening: {
       label: "LISTENING",
       color: "hsl(192 100% 60%)",
-      description: "Voice Input Active",
+      description: interimText ? `"${interimText}"` : "Voice Input Active",
     },
     thinking: {
       label: "PROCESSING",
       color: "hsl(45 100% 50%)",
-      description: "Analyzing Data",
+      description: "Analyzing Data with Groq AI",
     },
     speaking: {
       label: "RESPONDING",
       color: "hsl(120 100% 50%)",
-      description: "Audio Output",
+      description: "Audio Output Active",
     },
   };
 

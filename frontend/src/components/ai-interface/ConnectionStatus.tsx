@@ -2,22 +2,26 @@ import { motion } from "framer-motion";
 
 interface Connection {
   name: string;
-  status: "connected" | "pending" | "disconnected";
+  sublabel?: string;
+  status: "connected" | "pending" | "disconnected" | "fallback";
 }
 
 const ConnectionStatus = () => {
   const connections: Connection[] = [
-    { name: "ELEVENLABS", status: "pending" },
-    { name: "N8N BACKEND", status: "pending" },
-    { name: "NEURAL NET", status: "connected" },
+    { name: "GROQ AI", sublabel: "openai/gpt-oss-20b", status: "connected" },
+    { name: "FASTAPI BACKEND", sublabel: "127.0.0.1:8000", status: "connected" },
+    { name: "WEBSPEECH API", sublabel: "Browser Engine", status: "connected" },
+    { name: "ELEVENLABS TTS", sublabel: "Browser Fallback", status: "fallback" },
   ];
 
   const getStatusStyles = (status: Connection["status"]) => {
     switch (status) {
       case "connected":
-        return { color: "hsl(120 100% 50%)", label: "ONLINE" };
+        return { color: "hsl(142 76% 50%)", label: "ONLINE" };
+      case "fallback":
+        return { color: "hsl(192 100% 50%)", label: "NEURAL TTS" };
       case "pending":
-        return { color: "hsl(45 100% 50%)", label: "PENDING" };
+        return { color: "hsl(45 100% 50%)", label: "STANDBY" };
       case "disconnected":
         return { color: "hsl(0 85% 55%)", label: "OFFLINE" };
     }
@@ -35,23 +39,30 @@ const ConnectionStatus = () => {
             transition={{ delay: index * 0.1 }}
             className="flex items-center justify-between py-2 px-3 rounded bg-muted/30 border border-muted/50"
           >
-            <span className="text-xs uppercase tracking-wider text-foreground/80">
-              {connection.name}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-xs uppercase tracking-wider text-foreground font-semibold">
+                {connection.name}
+              </span>
+              {connection.sublabel && (
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {connection.sublabel}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <motion.div
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: statusStyle.color }}
-                animate={connection.status === "pending" ? {
-                  opacity: [0.5, 1, 0.5],
-                } : {}}
+                animate={{
+                  opacity: [0.6, 1, 0.6],
+                }}
                 transition={{
-                  duration: 1.5,
+                  duration: 2,
                   repeat: Infinity,
                 }}
               />
-              <span 
-                className="text-[10px] uppercase tracking-wider"
+              <span
+                className="text-[10px] uppercase tracking-wider font-semibold"
                 style={{ color: statusStyle.color }}
               >
                 {statusStyle.label}
